@@ -25,6 +25,7 @@ COLORS = {
 }
 
 OVERALL_COMBOS = 1326 # Total number of possible starting hands
+DISTINCT_HANDS = 169  # Total number of distinct starting hands
 
 # Reshape the hands into a 13x13 grid
 hands_grid = np.array(hands).reshape(13, 13)
@@ -94,20 +95,6 @@ def generate_range(hand_actions, title="Poker Hands Heatmap with Actions"):
     plt.tight_layout()
     plt.show()
 
-def range_percent_overall(hand_actions): 
-    # Returns the percent of the combos in the range relative to the total number of combinations
-    hand_types = {'pocket_pair': 0, 'suited': 0, 'offsuit': 0}
-    for hand in hand_actions.keys():
-        if (len(hand) == 2): 
-            hand_types['pocket_pair'] = hand_types.get('pocket_pair', 0) + 1
-        elif (hand[2] == 's'):
-            hand_types['suited'] = hand_types.get('suited', 0) + 1
-        else:
-            hand_types['offsuit'] = hand_types.get('offsuit', 0) + 1
-    
-    combos = hand_types['pocket_pair']*6 + hand_types['suited']*4 + hand_types['offsuit']*12
-    return (combos/OVERALL_COMBOS)*100, combos
-
 def range_percent_by_actions(hand_actions, action='raise'):
     total = 0
     for hand, frequencies in hand_actions.items(): 
@@ -124,8 +111,9 @@ def range_percent_by_all_actions(hand_actions):
     # Returns the percent of the combos in the range that perform certain actions relative to the total number of combinations
     raise_percent, raise_combos = range_percent_by_actions(hand_actions, 'raise')
     call_percent, call_combos = range_percent_by_actions(hand_actions, 'call')
-    fold_percent, fold_combos = range_percent_by_actions(hand_actions, 'fold')
-    overall_percent, overall_combos = range_percent_overall(hand_actions)
+    fold_percent = 100 - raise_percent - call_percent
+    fold_combos = OVERALL_COMBOS - raise_combos - call_combos
+    overall_percent, overall_combos = (raise_combos + call_combos)/OVERALL_COMBOS*100, raise_combos + call_combos
     return {
         'raise': {'percent': raise_percent, 'combos': raise_combos},
         'call': {'percent': call_percent, 'combos': call_combos},
@@ -146,8 +134,36 @@ def range_hand_distribution(hand_actions, action='raise'):
     ranks = pd.read_csv('../results/preflop_equity.csv')
     ranks = ranks[ranks['hand'].isin(hands)]
     summary_stats = ranks['Rank'].describe()
-    avg_hand_percentile = (summary_stats['mean'] / 169)*100
-    return summary_stats, avg_hand_percentile, ranks
+    return summary_stats, ranks
+
+def average_range_rank(hand_actions, action='raise'): 
+    # Returns the weighted average rank of all hands in the range considering the frequencies of actions
+    ranks = []
+    hand_ranks = pd.read_csv('../results/preflop_equity.csv')
+    for hand, actions in hand_actions.items(): 
+        for action, frequency in actions.items(): 
+            if frequency > 0 and action == action: 
+                hand_rank = hand_ranks[hand_ranks['hand'] == hand]
+                ranks.append(hand_rank['Rank']*frequency)
+    return np.mean(ranks)
+
+def percent_range_high_card(hand_actions):
+    # checks the percentage of the range that is K or A high+
+    # PFR generally indicates that the range is skewed towards high card hands-
+    # and we want to connect with A and K high boards.  
+    total = 0
+    total_range_combos = range_percent_by_all_actions(hand_actions)['overall']['combos']
+    for hand, action in hand_actions.items(): 
+        freq = action['raise'] + action['call']
+        if 'A' in hand or 'K' in hand: 
+            if len(hand) == 2: 
+                total += 6*freq
+            elif hand[2] == 's':
+                total += 4*freq
+            else: 
+                total += 12*freq
+    return (total/total_range_combos)*100
+
 
 # need to start thinking about comparisons between ranges
 # will use the preflop matchups equities to compare equities between ranges
