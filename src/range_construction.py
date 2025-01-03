@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 
 hands = [
@@ -94,6 +95,7 @@ def generate_range(hand_actions, title="Poker Hands Heatmap with Actions"):
     plt.show()
 
 def range_percent_overall(hand_actions): 
+    # Returns the percent of the combos in the range relative to the total number of combinations
     hand_types = {'pocket_pair': 0, 'suited': 0, 'offsuit': 0}
     for hand in hand_actions.keys():
         if (len(hand) == 2): 
@@ -118,10 +120,37 @@ def range_percent_by_actions(hand_actions, action='raise'):
             total += hand_combos*frequencies[action]
     return (total/OVERALL_COMBOS)*100, total
 
-def range_distribution(): 
-    return NotImplemented
+def range_percent_by_all_actions(hand_actions): 
+    # Returns the percent of the combos in the range that perform certain actions relative to the total number of combinations
+    raise_percent, raise_combos = range_percent_by_actions(hand_actions, 'raise')
+    call_percent, call_combos = range_percent_by_actions(hand_actions, 'call')
+    fold_percent, fold_combos = range_percent_by_actions(hand_actions, 'fold')
+    overall_percent, overall_combos = range_percent_overall(hand_actions)
+    return {
+        'raise': {'percent': raise_percent, 'combos': raise_combos},
+        'call': {'percent': call_percent, 'combos': call_combos},
+        'fold': {'percent': fold_percent, 'combos': fold_combos},
+        'overall': {'percent': overall_percent, 'combos': overall_combos}
+    }
+
+def range_hand_distribution(hand_actions, action='raise'):
+    # Explores the ranks of all hands in the range
+    # Returns the summary_stats (mean, min, max, etc.), average hand percentile, and the ranks dataframe
+    hands = [] 
+    for hand, actions in hand_actions.items(): 
+        for action, frequency in actions.items(): 
+            if frequency > 0 and action == action: 
+                hands.append(hand)
+
+
+    ranks = pd.read_csv('../results/preflop_equity.csv')
+    ranks = ranks[ranks['hand'].isin(hands)]
+    summary_stats = ranks['Rank'].describe()
+    avg_hand_percentile = (summary_stats['mean'] / 169)*100
+    return summary_stats, avg_hand_percentile, ranks
 
 # need to start thinking about comparisons between ranges
+# will use the preflop matchups equities to compare equities between ranges
 
 def range_comparison_percent_dominated(hand_actions_1, hand_actions_2): 
     # Given two ranges, calculate the percentage of hands that are dominated by one range over the other
