@@ -95,16 +95,18 @@ def generate_range(hand_actions, title=""):
     plt.tight_layout()
     plt.show()
 
+def hand_combos_multiplier(hand):
+    if len(hand) == 2: 
+        return 6
+    elif hand[2] == 's':
+        return 4
+    return 12
+
 def range_percent_by_actions(hand_actions, action='raise'):
     total = 0
     for hand, frequencies in hand_actions.items(): 
         if (frequencies[action] > 0): 
-            hand_combos = 12
-            if (len(hand) == 2): 
-                hand_combos = 6
-            elif (hand[2] == 's'): 
-                hand_combos = 4
-            total += hand_combos*frequencies[action]
+            total += hand_combos_multiplier(hand)*frequencies[action]
     return (total/OVERALL_COMBOS)*100, total
 
 def range_percent_by_all_actions(hand_actions): 
@@ -135,16 +137,16 @@ def range_hand_distribution(hand_actions, actions_list=['raise', 'call']):
     summary_stats = ranks['Rank'].describe()
     return summary_stats, ranks
 
-def average_range_rank(hand_actions, action='raise'): 
+def average_range_rank(hand_actions, actions_list=['raise', 'call']): 
     # Returns the weighted average rank of all hands in the range considering the frequencies of actions
     ranks = []
     hand_ranks = pd.read_csv('../results/preflop_equity.csv')
     for hand, actions in hand_actions.items(): 
         for action, frequency in actions.items(): 
-            if frequency > 0 and action == action: 
+            if frequency > 0 and action in actions_list: 
                 hand_rank = hand_ranks[hand_ranks['hand'] == hand]
                 ranks.append(hand_rank['Rank']*frequency)
-    return np.mean(ranks)
+    return np.mean(ranks) 
 
 def percent_range_high_card(hand_actions):
     # checks the percentage of the range that is K or A high+
@@ -155,12 +157,7 @@ def percent_range_high_card(hand_actions):
     for hand, action in hand_actions.items(): 
         freq = action['raise'] + action['call']
         if 'A' in hand or 'K' in hand: 
-            if len(hand) == 2: 
-                total += 6*freq
-            elif hand[2] == 's':
-                total += 4*freq
-            else: 
-                total += 12*freq
+            total += hand_combos_multiplier(hand)*freq
     return (total/total_range_combos)*100
 
 
