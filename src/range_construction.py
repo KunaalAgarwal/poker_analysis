@@ -35,7 +35,7 @@ hands_grid = np.array(hands).reshape(13, 13)
 range = {"AA": {'raise': 0.5, 'call': 0.5}, "AKs": {'raise': 0.8, 'call': 0.2}, ...}
 """
 
-def generate_range(hand_actions, title="Poker Hands Heatmap with Actions"):
+def generate_range(hand_actions, title=""):
     """
     Generate a 13x13 grid based on input actions for each hand and visualize it as a heatmap.
     Args:
@@ -121,15 +121,14 @@ def range_percent_by_all_actions(hand_actions):
         'overall': {'percent': overall_percent, 'combos': overall_combos}
     }
 
-def range_hand_distribution(hand_actions, action='raise'):
+def range_hand_distribution(hand_actions, actions_list=['raise', 'call']):
     # Explores the ranks of all hands in the range
     # Returns the summary_stats (mean, min, max, etc.), average hand percentile, and the ranks dataframe
-    hands = [] 
+    hands = set()
     for hand, actions in hand_actions.items(): 
-        for action, frequency in actions.items(): 
-            if frequency > 0 and action == action: 
-                hands.append(hand)
-
+        for action in actions_list:
+            if actions[action] > 0: 
+                hands.add(hand)
 
     ranks = pd.read_csv('../results/preflop_equity.csv')
     ranks = ranks[ranks['hand'].isin(hands)]
