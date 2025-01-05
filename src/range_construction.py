@@ -35,7 +35,7 @@ hands_grid = np.array(hands).reshape(13, 13)
 range = {"AA": {'raise': 0.5, 'call': 0.5}, "AKs": {'raise': 0.8, 'call': 0.2}, ...}
 """
 
-def generate_range(hand_actions, title=""):
+def generate_range(hand_actions, file_path=None, title=""):
     """
     Generate a 13x13 grid based on input actions for each hand and visualize it as a heatmap.
     Args:
@@ -93,7 +93,10 @@ def generate_range(hand_actions, title=""):
     ax.legend(handles=legend_patches, loc="upper right", title="Actions", bbox_to_anchor=(1.2, 1))
 
     plt.tight_layout()
+    if file_path:
+        plt.savefig(file_path)
     plt.show()
+    return fig
 
 def hand_combos_multiplier(hand):
     if len(hand) == 2: 
