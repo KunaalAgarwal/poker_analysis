@@ -124,17 +124,36 @@ def range_percent_by_all_actions(hand_actions):
     }
 
 def range_hand_distribution(hand_actions, actions_list=['raise', 'call']):
-    # Explores the ranks of all hands in the range
-    # Returns the summary_stats (mean, min, max, etc.), average hand percentile, and the ranks dataframe
-    hands = set()
-    for hand, actions in hand_actions.items(): 
+    """
+    Explores the ranks of all hands in the range and returns:
+    - Summary statistics (mean, min, max, etc.) of hand ranks
+    - Average hand percentile
+    - A DataFrame containing hand ranks and their action frequencies
+    """
+    # Collect hands and action frequencies
+    hands_data = []
+    for hand, actions in hand_actions.items():
+        hand_data = {'hand': hand}
+        total_frequency = 0
         for action in actions_list:
-            if actions[action] > 0: 
-                hands.add(hand)
-
+            freq = actions.get(action, 0)
+            hand_data[action] = freq
+            total_frequency += freq
+        if total_frequency > 0:  # Include only hands with non-zero frequencies
+            hands_data.append(hand_data)
+    
+    # Create a DataFrame for hand actions and frequencies
+    hands_df = pd.DataFrame(hands_data)
+    
+    # Load hand rank data
     ranks = pd.read_csv('../results/preflop_equity.csv')
-    ranks = ranks[ranks['hand'].isin(hands)]
+    
+    # Merge with hands DataFrame to include only relevant hands
+    ranks = ranks.merge(hands_df, on='hand', how='inner')
+    
+    # Compute summary statistics for the rank column
     summary_stats = ranks['Rank'].describe()
+    
     return summary_stats, ranks
 
 def average_range_rank(hand_actions, actions_list=['raise', 'call']): 
