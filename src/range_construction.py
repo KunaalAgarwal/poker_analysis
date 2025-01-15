@@ -183,6 +183,17 @@ def percent_range_high_card(hand_actions):
     return (total/total_range_combos)*100
 
 
+def flat_defense(three_bet_response, open_response):
+    flatting_combos_defended = 0
+    total_flatting_combos = 0
+
+    for hand, actions in open_response.items(): 
+        total_flatting_combos += hand_combos_multiplier(hand)*actions['call']
+        if actions['call'] > 0 and hand in three_bet_response: 
+            flatting_combos_defended += (three_bet_response[hand]['call'] + three_bet_response[hand]['raise'])*hand_combos_multiplier(hand)*actions['call']
+
+    return 100*(flatting_combos_defended / total_flatting_combos)
+
 # need to start thinking about comparisons between ranges
 # will use the preflop matchups equities to compare equities between ranges
 
