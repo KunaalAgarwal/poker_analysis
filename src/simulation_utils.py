@@ -1,4 +1,5 @@
 import random
+from treys import Card
 
 deck = [
     "2c", "2d", "2h", "2s", "3c", "3d", "3h", "3s", "4c", "4d", "4h", "4s", 
@@ -65,3 +66,7 @@ def ensure_unique_suits(*hands):
         updated_hands.append(updated_hand)
     
     return updated_hands
+
+def cards_to_treys(hand):
+    # converts ['As','Kh'] to Treys format
+    return [Card.new(card) for card in hand]
